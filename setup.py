@@ -19,5 +19,5 @@ setup(
             ".pre-commit-config.yaml",
         )
     ),
-    install_requires=["aiohttp>=3.8.3", "numpy>=1.23.4", "square-auth==0.0.11"],
+    install_requires=["aiohttp>=3.8.3", "numpy>=1.21.6", "square-auth==0.0.11"],
 )
