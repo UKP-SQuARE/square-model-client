@@ -3,6 +3,7 @@ import os
 import asyncio
 import base64
 import json
+import logging
 import time
 from io import BytesIO
 from typing import Dict, Iterable
@@ -16,6 +17,7 @@ from aiohttp.client import ClientSession
 from square_model_client import client_credentials
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+logger = logging.getLogger(__name__)
 
 
 class SQuAREModelClient:
@@ -170,9 +172,11 @@ class SQuAREModelClient:
             )
 
         my_conn = aiohttp.TCPConnector()
+        url = f"{self.square_api_url}/main/{model_identifier}/{prediction_method}"
+        logger.debug(f"Requesting prediction from {url} with input {input_data}")
         async with aiohttp.ClientSession(connector=my_conn) as session:
             async with session.post(
-                url=f"{self.square_api_url}/main/{model_identifier}/{prediction_method}",
+                url=url,
                 json=input_data,
                 headers={"Authorization": f"Bearer {client_credentials()}"},
                 verify_ssl=self.verify_ssl,
