@@ -7,7 +7,7 @@ pip install square-model-client
 ```
 
 ## Usage
-After installing, models in SQuARE can be called easily. Before running the code, the follinwg environment variables need to be set.
+After installing, models in SQuARE can be called easily. Before running the code, the following environment variables need to be set.
 ```bash
 export SQUARE_API_URL=https://square.ukp-lab.de/api
 export KEYCLOAK_BASE_URL=https://square.ukp-lab.de

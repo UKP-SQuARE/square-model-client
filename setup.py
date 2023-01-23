@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 setup(
     name="square_model_client",
@@ -19,5 +19,5 @@ setup(
             ".pre-commit-config.yaml",
         )
     ),
-    install_requires=["aiohttp>=3.8.3", "numpy>=1.21.6", "square-auth==0.0.11"],
+    install_requires=["aiohttp>=3.8.3", "numpy>=1.21.6", "square-auth==0.0.14"],
 )
