@@ -178,11 +178,14 @@ class SQuAREModelClient:
             async with session.post(
                 url=url,
                 json=input_data,
-                headers={"Authorization": f"Bearer {client_credentials()}"},
+                headers={
+                    "Authorization": f"Bearer {client_credentials()}",
+                    "Content-Type": "application/json",
+                },
                 verify_ssl=self.verify_ssl,
             ) as response:
                 result = await response.text()
-                # print(response.status)
+
                 if response.status == 200:
                     return await asyncio.ensure_future(
                         self._wait_for_task(
