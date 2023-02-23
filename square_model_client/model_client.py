@@ -122,13 +122,13 @@ class SQuAREModelClient:
                 headers={"Authorization": f"Bearer {client_credentials()}"},
                 verify=self.verify_ssl,
             )
-            resp = response.text()
+            resp = response.json()
 
             if response.status == 200:
-                result = ast.literal_eval(json.dumps(resp))
+                result = resp
                 break
             time.sleep(poll_interval)
-        return json.loads(result)["result"]
+        return result["result"]
 
     def __call__(self, model_name: str, pipeline: str, model_request: Dict) -> Dict:
         prediction = self.predict(
@@ -177,10 +177,10 @@ class SQuAREModelClient:
             },
             verify=self.verify_ssl,
         )
-        result = response.text()
+        result = response.json()
 
         if response.status == 200:
-            self._wait_for_task(ast.literal_eval(result)["task_id"])
+            self._wait_for_task(result["task_id"])
         else:
             return response
 
@@ -246,12 +246,10 @@ class SQuAREModelClient:
             headers={"Authorization": f"Bearer {client_credentials()}"},
             verify=self.verify_ssl,
         )
-        result = response.text()
+        result = response.json()
         # print(response.status)
         if response.status == 200:
-            return self._wait_for_task(
-                ast.literal_eval(result)["task_id"], poll_interval=20
-            )
+            return self._wait_for_task(result["task_id"], poll_interval=20)
         else:
             return response
 
@@ -268,10 +266,10 @@ class SQuAREModelClient:
             headers={"Authorization": f"Bearer {client_credentials()}"},
             verify=self.verify_ssl,
         )
-        result = response.text()
+        result = response.json()
         # print(response.status)
         if response.status == 200:
-            return self._wait_for_task(ast.literal_eval(result)["task_id"])
+            return self._wait_for_task(result["task_id"])
         else:
             return response
 
@@ -319,9 +317,9 @@ class SQuAREModelClient:
             headers={"Authorization": f"Bearer {client_credentials()}"},
             verify=self.verify_ssl,
         )
-        result = response.text()
+        result = response.json()
         if response.status == 200:
-            return self._wait_for_task(ast.literal_eval(result)["task_id"])
+            return self._wait_for_task(result["task_id"])
         else:
             return response
 
@@ -336,8 +334,8 @@ class SQuAREModelClient:
             headers={"Authorization": f"Bearer {client_credentials()}"},
             verify=self.verify_ssl,
         )
-        result = response.text()
+        result = response.json()
         if response.status == 200:
-            return self._wait_for_task(ast.literal_eval(result)["task_id"])
+            return self._wait_for_task(result["task_id"])
         else:
             return response
