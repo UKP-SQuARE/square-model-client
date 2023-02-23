@@ -1,6 +1,5 @@
 import ast
 import os
-import asyncio
 import base64
 import json
 import logging
@@ -8,11 +7,9 @@ import time
 from io import BytesIO
 from typing import Dict, Iterable
 
-import aiohttp
 import numpy as np
 import requests
 import urllib3
-from aiohttp.client import ClientSession
 
 from square_model_client import client_credentials
 
@@ -60,6 +57,7 @@ class SQuAREModelClient:
         Returns:
             Dict: model_api_response with 'model_outputs' decoded and parsed to numpy
         """
+
         # Decode byte base64 string back to numpy array
         def _decode(arr_string_b64):
             arr_binary_b64 = arr_string_b64.encode()
@@ -91,10 +89,9 @@ class SQuAREModelClient:
             }
         return model_api_response
 
-    async def _wait_for_task(
+    def _wait_for_task(
         self,
         task_id: str,
-        session: ClientSession,
         max_attempts=None,
         poll_interval=None,
     ):
@@ -120,23 +117,21 @@ class SQuAREModelClient:
 
         while attempts < max_attempts:
             attempts += 1
-            async with session.get(
+            response = requests.get(
                 url=f"{self.square_api_url}/main/task_result/{task_id}",
                 headers={"Authorization": f"Bearer {client_credentials()}"},
                 verify_ssl=self.verify_ssl,
-            ) as response:
-                resp = await response.text()
+            )
+            resp = response.text()
 
-                if response.status == 200:
-                    result = ast.literal_eval(json.dumps(resp))
-                    break
-                time.sleep(poll_interval)
+            if response.status == 200:
+                result = ast.literal_eval(json.dumps(resp))
+                break
+            time.sleep(poll_interval)
         return json.loads(result)["result"]
 
-    async def __call__(
-        self, model_name: str, pipeline: str, model_request: Dict
-    ) -> Dict:
-        prediction = await self.predict(
+    def __call__(self, model_name: str, pipeline: str, model_request: Dict) -> Dict:
+        prediction = self.predict(
             model_identifier=model_name,
             prediction_method=pipeline,
             input_data=model_request,
@@ -145,7 +140,7 @@ class SQuAREModelClient:
 
         return prediction
 
-    async def predict(self, model_identifier, prediction_method, input_data):
+    def predict(self, model_identifier, prediction_method, input_data):
         """
         Request model prediction.
         Args:
@@ -171,30 +166,23 @@ class SQuAREModelClient:
                 f"{supported_prediction_methods}"
             )
 
-        my_conn = aiohttp.TCPConnector()
         url = f"{self.square_api_url}/main/{model_identifier}/{prediction_method}"
         logger.debug(f"Requesting prediction from {url} with input {input_data}")
-        async with aiohttp.ClientSession(connector=my_conn) as session:
-            async with session.post(
-                url=url,
-                json=input_data,
-                headers={
-                    "Authorization": f"Bearer {client_credentials()}",
-                    "Content-Type": "application/json",
-                },
-                verify_ssl=self.verify_ssl,
-            ) as response:
-                result = await response.text()
+        response = requests.post(
+            url=url,
+            json=input_data,
+            headers={
+                "Authorization": f"Bearer {client_credentials()}",
+                "Content-Type": "application/json",
+            },
+            verify_ssl=self.verify_ssl,
+        )
+        result = response.text()
 
-                if response.status == 200:
-                    return await asyncio.ensure_future(
-                        self._wait_for_task(
-                            ast.literal_eval(result)["task_id"],
-                            session=session,
-                        )
-                    )
-                else:
-                    return response
+        if response.status == 200:
+            self._wait_for_task(ast.literal_eval(result)["task_id"])
+        else:
+            return response
 
     def stats(self, model_identifier):
         """
@@ -232,7 +220,7 @@ class SQuAREModelClient:
         )
         return response.json()
 
-    async def deploy(self, model_attributes):
+    def deploy(self, model_attributes):
         """
         Deploy a new model.
         Args:
@@ -251,51 +239,41 @@ class SQuAREModelClient:
                     "preloaded_adapters": True
                 }
         """
-        my_conn = aiohttp.TCPConnector()
-        async with aiohttp.ClientSession(connector=my_conn) as session:
-            async with session.post(
-                url=f"{self.square_api_url}/models/deploy",
-                json=model_attributes,
-                headers={"Authorization": f"Bearer {client_credentials()}"},
-                verify_ssl=self.verify_ssl,
-            ) as response:
-                result = await response.text()
-                # print(response.status)
-                if response.status == 200:
-                    return await asyncio.ensure_future(
-                        self._wait_for_task(
-                            ast.literal_eval(result)["task_id"],
-                            session=session,
-                            poll_interval=20,
-                        )
-                    )
-                else:
-                    return response
 
-    async def remove(self, model_identifier):
+        response = requests.post(
+            url=f"{self.square_api_url}/models/deploy",
+            json=model_attributes,
+            headers={"Authorization": f"Bearer {client_credentials()}"},
+            verify_ssl=self.verify_ssl,
+        )
+        result = response.text()
+        # print(response.status)
+        if response.status == 200:
+            return self._wait_for_task(
+                ast.literal_eval(result)["task_id"], poll_interval=20
+            )
+        else:
+            return response
+
+    def remove(self, model_identifier):
         """
         Remove the model with the given identifier
         Args:
             model_identifier (str): the identifier of the model that should be removed
         """
-        my_conn = aiohttp.TCPConnector()
-        async with aiohttp.ClientSession(connector=my_conn) as session:
-            async with session.delete(
-                url=f"{self.square_api_url}/models/remove/{model_identifier}",
-                json=model_identifier,
-                headers={"Authorization": f"Bearer {client_credentials()}"},
-                verify_ssl=self.verify_ssl,
-            ) as response:
-                result = await response.text()
-                # print(response.status)
-                if response.status == 200:
-                    return await asyncio.ensure_future(
-                        self._wait_for_task(
-                            ast.literal_eval(result)["task_id"], session=session
-                        )
-                    )
-                else:
-                    return response
+
+        response = requests.delete(
+            url=f"{self.square_api_url}/models/remove/{model_identifier}",
+            json=model_identifier,
+            headers={"Authorization": f"Bearer {client_credentials()}"},
+            verify_ssl=self.verify_ssl,
+        )
+        result = response.text()
+        # print(response.status)
+        if response.status == 200:
+            return self._wait_for_task(ast.literal_eval(result)["task_id"])
+        else:
+            return response
 
     def update(self, model_identifier, updated_attributes):
         """
@@ -322,7 +300,7 @@ class SQuAREModelClient:
         )
         return response.json()
 
-    async def add_worker(self, model_identifier, number):
+    def add_worker(self, model_identifier, number):
         """
         Adds workers of a specific model such that heavy
         workloads can be handled better.
@@ -335,43 +313,31 @@ class SQuAREModelClient:
             number (int): the number of workers to add
         """
 
-        my_conn = aiohttp.TCPConnector()
-        async with aiohttp.ClientSession(connector=my_conn) as session:
-            async with session.patch(
-                url=f"{self.square_api_url}/models/{model_identifier}/add_worker/{number}",
-                json=model_identifier,
-                headers={"Authorization": f"Bearer {client_credentials()}"},
-                verify_ssl=self.verify_ssl,
-            ) as response:
-                result = await response.text()
-                if response.status == 200:
-                    return await asyncio.ensure_future(
-                        self._wait_for_task(
-                            ast.literal_eval(result)["task_id"], session=session
-                        )
-                    )
-                else:
-                    return response
+        response = requests.patch(
+            url=f"{self.square_api_url}/models/{model_identifier}/add_worker/{number}",
+            json=model_identifier,
+            headers={"Authorization": f"Bearer {client_credentials()}"},
+            verify_ssl=self.verify_ssl,
+        )
+        result = response.text()
+        if response.status == 200:
+            return self._wait_for_task(ast.literal_eval(result)["task_id"])
+        else:
+            return response
 
-    async def remove_worker(self, model_identifier, number):
+    def remove_worker(self, model_identifier, number):
         """
         Remove/down-scale model worker
         """
 
-        my_conn = aiohttp.TCPConnector()
-        async with aiohttp.ClientSession(connector=my_conn) as session:
-            async with session.patch(
-                url=f"{self.square_api_url}/models/{model_identifier}/remove_worker/{number}",
-                json=model_identifier,
-                headers={"Authorization": f"Bearer {client_credentials()}"},
-                verify_ssl=self.verify_ssl,
-            ) as response:
-                result = await response.text()
-                if response.status == 200:
-                    return await asyncio.ensure_future(
-                        self._wait_for_task(
-                            ast.literal_eval(result)["task_id"], session=session
-                        )
-                    )
-                else:
-                    return response
+        response = requests.patch(
+            url=f"{self.square_api_url}/models/{model_identifier}/remove_worker/{number}",
+            json=model_identifier,
+            headers={"Authorization": f"Bearer {client_credentials()}"},
+            verify_ssl=self.verify_ssl,
+        )
+        result = response.text()
+        if response.status == 200:
+            return self._wait_for_task(ast.literal_eval(result)["task_id"])
+        else:
+            return response
