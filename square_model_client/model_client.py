@@ -124,7 +124,7 @@ class SQuAREModelClient:
             )
             resp = response.json()
 
-            if response.status == 200:
+            if response.status_code == 200:
                 result = resp
                 break
             time.sleep(poll_interval)
@@ -179,7 +179,7 @@ class SQuAREModelClient:
         )
         result = response.json()
 
-        if response.status == 200:
+        if response.status_code == 200:
             self._wait_for_task(result["task_id"])
         else:
             return response
@@ -247,8 +247,8 @@ class SQuAREModelClient:
             verify=self.verify_ssl,
         )
         result = response.json()
-        # print(response.status)
-        if response.status == 200:
+
+        if response.status_code == 200:
             return self._wait_for_task(result["task_id"], poll_interval=20)
         else:
             return response
@@ -267,8 +267,8 @@ class SQuAREModelClient:
             verify=self.verify_ssl,
         )
         result = response.json()
-        # print(response.status)
-        if response.status == 200:
+
+        if response.status_code == 200:
             return self._wait_for_task(result["task_id"])
         else:
             return response
@@ -318,7 +318,7 @@ class SQuAREModelClient:
             verify=self.verify_ssl,
         )
         result = response.json()
-        if response.status == 200:
+        if response.status_code == 200:
             return self._wait_for_task(result["task_id"])
         else:
             return response
@@ -335,7 +335,7 @@ class SQuAREModelClient:
             verify=self.verify_ssl,
         )
         result = response.json()
-        if response.status == 200:
+        if response.status_code == 200:
             return self._wait_for_task(result["task_id"])
         else:
             return response
