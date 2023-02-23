@@ -120,7 +120,7 @@ class SQuAREModelClient:
             response = requests.get(
                 url=f"{self.square_api_url}/main/task_result/{task_id}",
                 headers={"Authorization": f"Bearer {client_credentials()}"},
-                verify_ssl=self.verify_ssl,
+                verify=self.verify_ssl,
             )
             resp = response.text()
 
@@ -175,7 +175,7 @@ class SQuAREModelClient:
                 "Authorization": f"Bearer {client_credentials()}",
                 "Content-Type": "application/json",
             },
-            verify_ssl=self.verify_ssl,
+            verify=self.verify_ssl,
         )
         result = response.text()
 
@@ -244,7 +244,7 @@ class SQuAREModelClient:
             url=f"{self.square_api_url}/models/deploy",
             json=model_attributes,
             headers={"Authorization": f"Bearer {client_credentials()}"},
-            verify_ssl=self.verify_ssl,
+            verify=self.verify_ssl,
         )
         result = response.text()
         # print(response.status)
@@ -266,7 +266,7 @@ class SQuAREModelClient:
             url=f"{self.square_api_url}/models/remove/{model_identifier}",
             json=model_identifier,
             headers={"Authorization": f"Bearer {client_credentials()}"},
-            verify_ssl=self.verify_ssl,
+            verify=self.verify_ssl,
         )
         result = response.text()
         # print(response.status)
@@ -317,7 +317,7 @@ class SQuAREModelClient:
             url=f"{self.square_api_url}/models/{model_identifier}/add_worker/{number}",
             json=model_identifier,
             headers={"Authorization": f"Bearer {client_credentials()}"},
-            verify_ssl=self.verify_ssl,
+            verify=self.verify_ssl,
         )
         result = response.text()
         if response.status == 200:
@@ -334,7 +334,7 @@ class SQuAREModelClient:
             url=f"{self.square_api_url}/models/{model_identifier}/remove_worker/{number}",
             json=model_identifier,
             headers={"Authorization": f"Bearer {client_credentials()}"},
-            verify_ssl=self.verify_ssl,
+            verify=self.verify_ssl,
         )
         result = response.text()
         if response.status == 200:
