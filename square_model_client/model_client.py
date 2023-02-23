@@ -180,7 +180,7 @@ class SQuAREModelClient:
         result = response.json()
 
         if response.status_code == 200:
-            self._wait_for_task(result["task_id"])
+            return self._wait_for_task(result["task_id"])
         else:
             return response
 
