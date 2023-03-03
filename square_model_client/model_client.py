@@ -192,7 +192,7 @@ class SQuAREModelClient:
                 to provide the statistics for
         """
         response = requests.get(
-            url="{}/main/{}/stats".format(self.square_api_url, model_identifier),
+            url=f"{self.square_api_url}/main/{model_identifier}/stats",
             headers={"Authorization": f"Bearer {client_credentials()}"},
             verify=self.verify_ssl,
         )
@@ -203,7 +203,7 @@ class SQuAREModelClient:
         Get all deployed models and their statistics
         """
         response = requests.get(
-            url="{}/models/deployed-models".format(self.square_api_url),
+            url=f"{self.square_api_url}/models/deployed-models",
             headers={"Authorization": f"Bearer {client_credentials()}"},
             verify=self.verify_ssl,
         )
@@ -214,7 +214,7 @@ class SQuAREModelClient:
         Get all deployed models and their statistics
         """
         response = requests.get(
-            url="{}/models/deployed-model-workers".format(self.square_api_url),
+            url=f"{self.square_api_url}/models/deployed-model-workers",
             headers={"Authorization": f"Bearer {client_credentials()}"},
             verify=self.verify_ssl,
         )
@@ -291,7 +291,7 @@ class SQuAREModelClient:
                 }
         """
         response = requests.patch(
-            url="{}/models/update/{}".format(self.square_api_url, model_identifier),
+            url=f"{self.square_api_url}/models/update/{model_identifier}",
             headers={"Authorization": f"Bearer {client_credentials()}"},
             json=updated_attributes,
             verify=self.verify_ssl,
