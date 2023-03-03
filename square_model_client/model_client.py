@@ -339,3 +339,56 @@ class SQuAREModelClient:
             return self._wait_for_task(result["task_id"])
         else:
             return response
+
+    def get_models_in_deployment(self) -> Dict[str, str]:
+        """Returns dict mapping of model names to types are currently beeing deployed."""
+        token = client_credentials()
+        response = requests.get(
+            f"{self.settings.model_api_url}/models/task",
+            headers=dict(Authorization=f"Bearer {token}"),
+        )
+        logger.debug(f"get running tasks {response.text}")
+
+        response.raise_for_status()
+
+        running_tasks = response.json()
+        models_in_deployment = {}
+        for worker2tasks in running_tasks.values():
+            for tasks in worker2tasks.values():
+                for task in tasks:
+                    if task["name"] == "tasks.tasks.deploy_task":
+                        model_name = task["args"][0]["MODEL_NAME"]
+                        model_type = task["args"][0]["MODEL_TYPE"]
+                        models_in_deployment[model_name] = model_type
+
+        return models_in_deployment
+
+    def deploy_model_if_not_exists(self, default_skill_args: Dict):
+        """Deploys a model if it is not deployed and not currently deploying."""
+        model_name = default_skill_args.get("base_model")
+        if not model_name:
+            logger.info("No base_model in the skill args. Nothing to deploy.")
+            return
+        model_type = "adapter" if "adapter" in default_skill_args else "transformer"
+        logger.info(
+            f"Checking if model={model_name} with model_type={model_type} is already deployed."
+        )
+
+        deployed_models = self.deployed_models()
+        if deployed_models.get(model_name, "") == model_type:
+            logger.info(
+                f"model={model_name} with model_type={model_type} is already deployed."
+            )
+            return
+
+        currently_deploying_models = self.get_models_in_deployment()
+        if currently_deploying_models.get(model_name, "") == model_type:
+            logger.info(
+                f"model={model_name} with model_type={model_type} is in deployment."
+            )
+            return
+
+        logger.info(
+            f"model={model_name} with model_type={model_type} is not deployed. Starting deployment."
+        )
+        self.deploy_model(model_name=model_name, model_type=model_type)
