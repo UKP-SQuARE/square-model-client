@@ -344,7 +344,7 @@ class SQuAREModelClient:
         """Returns dict mapping of model names to types are currently beeing deployed."""
         token = client_credentials()
         response = requests.get(
-            f"{self.settings.model_api_url}/models/task",
+            f"{self.square_api_url}/models/task",
             headers=dict(Authorization=f"Bearer {token}"),
         )
         logger.debug(f"get running tasks {response.text}")
@@ -375,7 +375,8 @@ class SQuAREModelClient:
         )
 
         deployed_models = self.deployed_models()
-        if deployed_models.get(model_name, "") == model_type:
+
+        if any(model['model_name'] == model_name and model['model_type'] == model_type for model in deployed_models):
             logger.info(
                 f"model={model_name} with model_type={model_type} is already deployed."
             )
@@ -391,4 +392,8 @@ class SQuAREModelClient:
         logger.info(
             f"model={model_name} with model_type={model_type} is not deployed. Starting deployment."
         )
-        self.deploy_model(model_name=model_name, model_type=model_type)
+        self.deploy(model_attributes={
+            "identifier": model_name,
+            "model_name": model_name,
+            "model_type": model_type,
+        })
